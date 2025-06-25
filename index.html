@@ -84,11 +84,58 @@
       border: 1px solid #555;
       border-radius: 5px;
     }
+    #countdown {
+      font-size: 2em;
+      margin-top: 15px;
+      color: #ffd700;
+    }
+    #instruction-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    #instruction-modal div {
+      background: #222;
+      padding: 20px;
+      border-radius: 8px;
+      width: 80%;
+      max-width: 500px;
+      color: white;
+      text-align: left;
+    }
+    #instruction-modal h2 {
+      margin-top: 0;
+    }
+    #instruction-modal button {
+      display: block;
+      margin: 20px auto 0 auto;
+    }
   </style>
 </head>
 <body>
+  <div id="instruction-modal">
+    <div>
+      <h2>How to Play 🧠</h2>
+      <ul>
+        <li>Memorize the pattern of highlighted tiles.</li>
+        <li>Repeat the pattern by clicking the same tiles in order.</li>
+        <li>Each level adds more tiles to remember.</li>
+        <li>Game ends if you click incorrectly.</li>
+        <li>Difficulty affects how fast and how many tiles to memorize.</li>
+      </ul>
+      <button onclick="closeInstructions()">Got it!</button>
+    </div>
+  </div>
   <h1>🧠 Memory Grid Showdown</h1>
   <div id="status">Press Start to begin!</div>
+  <div id="countdown"></div>
   <div id="timer">⏱️ Time: 0s</div>
   <div id="grid"></div>
   <div id="controls">
@@ -113,9 +160,11 @@
     const status = document.getElementById("status");
     const timerDisplay = document.getElementById("timer");
     const scoresList = document.getElementById("scores");
+    const countdown = document.getElementById("countdown");
     const successSound = document.getElementById("success-sound");
     const failSound = document.getElementById("fail-sound");
     const bgMusic = document.getElementById("bg-music");
+    const instructionModal = document.getElementById("instruction-modal");
 
     let pattern = [];
     let userClicks = [];
@@ -145,6 +194,22 @@
         cell.addEventListener("click", () => handleClick(i));
         grid.appendChild(cell);
       }
+    }
+
+    function countdownReady(callback) {
+      let messages = ["Ready...", "Steady...", "Go!"];
+      let i = 0;
+      countdown.textContent = messages[i];
+      let interval = setInterval(() => {
+        i++;
+        if (i < messages.length) {
+          countdown.textContent = messages[i];
+        } else {
+          clearInterval(interval);
+          countdown.textContent = "";
+          callback();
+        }
+      }, 1000);
     }
 
     function highlightPattern() {
@@ -187,7 +252,7 @@
         successSound.play();
         level++;
         status.textContent = `✅ Correct! Next level: ${level}`;
-        setTimeout(highlightPattern, 1000);
+        setTimeout(() => countdownReady(highlightPattern), 1000);
       } else {
         failSound.play();
         const timeTaken = Math.floor((Date.now() - startTime) / 1000);
@@ -200,10 +265,11 @@
     }
 
     function startGame() {
+      if (instructionModal.style.display !== "none") return;
       level = 1;
       createGrid();
-      highlightPattern();
       status.textContent = "Memorize the pattern!";
+      countdownReady(highlightPattern);
       startTime = Date.now();
       clearInterval(interval);
       interval = setInterval(() => {
@@ -218,6 +284,7 @@
       clearInterval(interval);
       timerDisplay.textContent = "⏱️ Time: 0s";
       status.textContent = "Game reset. Press Start to begin!";
+      countdown.textContent = "";
       level = 1;
       createGrid();
       bgMusic.pause();
@@ -243,6 +310,10 @@
         li.textContent = `${score.name} - Level ${score.level} (${score.time}s)`;
         scoresList.appendChild(li);
       });
+    }
+
+    function closeInstructions() {
+      instructionModal.style.display = "none";
     }
 
     displayLeaderboard();
